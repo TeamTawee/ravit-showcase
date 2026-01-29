@@ -17,21 +17,28 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      // 1. ถ้ามีคน Login เข้ามา
       if (currentUser) {
         // ตรวจสอบโดเมนอีเมลองค์กร
         if (currentUser.email.endsWith("@fufonglabs.com")) {
           setUser(currentUser);
-          if (pathname === "/login") router.push("/");
+          // ถ้า Login แล้ว แต่อยู่หน้า Login -> ดีดเข้าหน้าแรกทันที
+          if (pathname === "/login") {
+            router.push("/");
+          }
         } else {
+          // ถ้าอีเมลผิด -> บังคับออกทันที
           await signOut(auth);
           setUser(null);
           alert("ขออภัย! อนุญาตเฉพาะบัญชี @fufonglabs.com เท่านั้น");
           router.push("/login");
         }
-      } else {
+      } 
+      // 2. ถ้าไม่ได้ Login (หรือ Log out ไปแล้ว)
+      else {
         setUser(null);
-        // ถ้าพยายามเข้าหน้า admin แต่ไม่ได้ login ให้ดีดไปหน้า login
-        if (pathname.startsWith("/admin") && pathname !== "/login") {
+        // 🔒 ไฮไลท์สำคัญ: ถ้าไม่อยู่หน้า Login -> ดีดไปหน้า Login ทันที (กันคนแอบเข้า link ตรง)
+        if (pathname !== "/login") {
           router.push("/login");
         }
       }
@@ -41,13 +48,19 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, [router, pathname]);
 
+  // 3. ระหว่างรอตรวจสอบสิทธิ์ ให้หมุนติ้วๆ ไปก่อน (ห้ามเห็นเนื้อหา)
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-        <Loader2 className="animate-spin text-red-600" size={48} />
-        <p className="text-slate-400 text-sm font-light">กำลังตรวจสอบสิทธิ์...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#121212] gap-4">
+        <Loader2 className="animate-spin text-[#E60000]" size={48} />
+        <p className="text-slate-400 text-sm font-light tracking-widest uppercase">Verifying Access...</p>
       </div>
     );
+  }
+
+  // 4. ถ้าโหลดเสร็จแล้ว แต่ไม่มี User และไม่ได้อยู่หน้า Login (กันเหนียวอีกชั้นไม่ให้ render)
+  if (!user && pathname !== "/login") {
+    return null; 
   }
 
   return (
