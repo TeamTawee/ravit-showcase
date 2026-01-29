@@ -29,7 +29,14 @@ const StoryCard = ({ story }) => (
     >
       <div className="relative aspect-square overflow-hidden">
         <div className="absolute inset-0">
-          <Image src={story.image || "https://via.placeholder.com/400"} alt={story.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+          <Image 
+            src={story.image || "https://via.placeholder.com/400"} 
+            alt={story.title} 
+            fill 
+            className="object-cover transition-transform duration-700 group-hover:scale-110" 
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            quality={65} // เพิ่มตรงนี้ช่วยหน้าแรกด้วย
+          />
           <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-transparent opacity-90" />
         </div>
         <div className="absolute bottom-0 left-0 p-6 z-10 w-full">
@@ -87,28 +94,41 @@ export default function HomePage() {
         </button>
 
         <AnimatePresence>
-    {isMenuOpen && (
-        <motion.div 
-            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            // 👇 จุดแก้ความสวยอยู่ตรงนี้ครับ
-            className="absolute top-full left-0 right-0 
-                       bg-linear-to-b from-white/80 to-white/60 
-                       backdrop-blur-2xl backdrop-saturate-150
-                       border-b border-white/10 
-                       shadow-xl md:hidden 
-                       rounded-b-3xl p-6 flex flex-col gap-4"
-        >
-            <a href="#home" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold">Home</a>
-            <a href="#vision" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold">Vision</a>
-            <a href="#bio" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold">About</a>
-        </motion.div>
-    )}
-</AnimatePresence>
+            {isMenuOpen && (
+                // ✅ แก้จุดที่ 1: ใช้ motion.div แทน div ธรรมดา และเอา <> ออก เพื่อให้ AnimatePresence ทำงานสมบูรณ์
+                // ใส่ bg-black/5 เพื่อให้คนรู้ว่ามี overlay และช่วยให้จับ Touch ได้ดีขึ้น
+                <motion.div 
+                    key="overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/5 z-0 md:hidden h-screen w-screen"
+                    onClick={() => setIsMenuOpen(false)}
+                />
+            )}
+            
+            {isMenuOpen && (
+                <motion.div 
+                    key="menu"
+                    initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+                    className="absolute top-full left-0 right-0 
+                               bg-linear-to-b from-white/80 to-white/60 
+                               backdrop-blur-2xl backdrop-saturate-150
+                               border-b border-white/10 
+                               shadow-xl md:hidden 
+                               rounded-b-3xl p-6 flex flex-col gap-4 z-10"
+                >
+                    <a href="#home" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold">Home</a>
+                    <a href="#vision" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold">Vision</a>
+                    <a href="#bio" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold">About</a>
+                </motion.div>
+            )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero Section */}
       <header id="home" className="relative pt-32 md:pt-48 pb-10 md:pb-20 px-6 overflow-hidden bg-white">
-        <div className="absolute top-20 md:top-40 left-0 md:left-10 w-full text-center md:text-left text-[15vw] font-black text-slate-50 opacity-[0.03] select-none leading-none z-0 pointer-events-none">
+        <div className="absolute top-20 md:top-40 left-0 md:left-10 w-full text-center md:text-left text-[15vw] font-black text-slate-50 opacity-[0.03] select-none leading-none z-0 pointer-events-none will-change-transform">
             RAVIT SODSONG
         </div>
         

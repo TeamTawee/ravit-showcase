@@ -135,32 +135,38 @@ export default function StoryDetail({ params }) {
 
       <div className="relative w-full max-w-4xl mx-auto pt-24 md:pt-32 px-4 md:px-0">
           <div className="relative w-full aspect-square z-20 rounded-[40px] overflow-hidden shadow-sm border border-slate-100 bg-slate-50">
+              {/* ✅ แก้จุดที่ 1: เพิ่ม sizes และลด quality เหลือ 60 (ตายังชัด แต่ลื่นขึ้น) */}
               <Image 
                   src={story.image || "/placeholder.jpg"} 
                   alt={story.title} 
                   fill 
                   className="object-cover"
                   priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+                  quality={60}
               />
           </div>
 
           <motion.div 
             style={{ y: blurY }}
-            className="absolute top-[75%] left-4 right-4 h-[70%] -z-10 opacity-70"
+            className="absolute top-[75%] left-4 right-4 h-[70%] -z-10 opacity-70 will-change-transform"
           >
-              <div className="relative w-full h-full blur-[120px] saturate-150">
+              <div className="relative w-full h-full blur-3xl md:blur-[120px] saturate-150">
                  <Image 
                     src={story.image || "/placeholder.jpg"} 
                     alt="blur-bg" 
                     fill 
                     className="object-cover object-bottom mask-image-fade"
+                    sizes="100vw"
+                    quality={30}
                  />
               </div>
           </motion.div>
       </div>
 
       <div className="relative z-30 max-w-3xl mx-auto px-6 -mt-2">
-          <div className="bg-white/40 backdrop-blur-3xl rounded-[40px] p-8 md:p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-white/40 ring-1 ring-white/60">
+          {/* ปรับ backdrop-blur ให้พอดีกับมือถือ (ถ้ามือถือใช้ 3xl บางทีจะกระตุก) */}
+          <div className="bg-white/40 backdrop-blur-xl md:backdrop-blur-3xl rounded-[40px] p-8 md:p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-white/40 ring-1 ring-white/60">
               <div className="text-center space-y-6">
                   <div className="flex justify-center items-center gap-3">
                       <span className="bg-[#E60000] text-white px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-red-500/20 shadow-lg">

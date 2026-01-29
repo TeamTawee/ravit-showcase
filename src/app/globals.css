@@ -1,21 +1,26 @@
-html {
-  scroll-behavior: smooth; /* ทำให้การเลื่อนไปยัง ID ต่างๆ นุ่มนวลขึ้น */
-}
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+  /* 👇 1. ป้องกันการดึงหน้าจอบนสุดแล้วมัน Reload เอง */
+  overscroll-behavior-y: none;
+}
+
 :root {
-  --background: #F5F5F7; /* สีเทาอ่อนแบบ Apple Style */
-  --foreground: #121212; /* สีดำด้าน */
-  --pt-red: #E60000;    /* แดงพรรคเพื่อไทย */
+  --background: #F5F5F7;
+  --foreground: #121212;
+  --pt-red: #E60000;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  /* 👇 2. ทำให้การเลื่อนบน iOS ลื่นติดนิ้วแบบ Native App */
+  -webkit-overflow-scrolling: touch; 
 }
 
-/* Custom Scrollbar ให้เป็นสีแดง */
+/* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #E60000; border-radius: 10px; }
@@ -24,4 +29,16 @@ body {
   .will-change-transform-opacity {
     will-change: transform, opacity;
   }
+}
+
+/* 👇 3. GPU Acceleration Hack: บังคับใช้การ์ดจอเรนเดอร์ภาพเบลอ (แก้กระตุก) */
+.backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur-3xl {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+/* 👇 4. ป้องกันภาพกระพริบเวลาโหลด หรือเลื่อนเร็วๆ */
+img {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
