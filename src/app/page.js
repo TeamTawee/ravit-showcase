@@ -184,7 +184,7 @@ export default function HomePage() {
                 </p>
                 <div className="flex gap-4">
                      <a href="#stories" className="px-6 py-3 rounded-full bg-[#121212] text-white font-bold text-sm hover:bg-[#E60000] transition-all flex items-center gap-2">
-                        ดูผลงานล่าสุด <ArrowRight size={16}/>
+                        THE MOVEMENT<ArrowRight size={16}/>
                      </a>
                 </div>
             </div>
