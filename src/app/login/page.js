@@ -24,7 +24,7 @@ export default function LoginPage() {
             setLoading(false);
             return;
         }
-        router.push("/admin"); // Login สำเร็จให้ไปหน้า Admin
+        router.push("/");
     } catch (err) {
         if (err.code !== 'auth/popup-closed-by-user') {
             setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
