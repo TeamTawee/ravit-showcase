@@ -11,54 +11,60 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // สถานะโหลดเริ่มต้นเป็น true เสมอ
   const router = useRouter();
   const pathname = usePathname();
 
+  // 🟢 Effect 1: ฟังสถานะ Login (รันครั้งเดียวตอนเข้าเว็บ)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      // 1. ถ้ามีคน Login เข้ามา
       if (currentUser) {
-        // ตรวจสอบโดเมนอีเมลองค์กร
-        if (currentUser.email.endsWith("@fufonglabs.com")) {
+        // เช็ค Email แบบตัวพิมพ์เล็ก/ใหญ่ เพื่อความชัวร์ (toLowerCase)
+        if (currentUser.email.toLowerCase().endsWith("@fufonglabs.com")) {
           setUser(currentUser);
-          // ถ้า Login แล้ว แต่อยู่หน้า Login -> ดีดเข้าหน้าแรกทันที
-          if (pathname === "/login") {
-            router.push("/");
-          }
         } else {
-          // ถ้าอีเมลผิด -> บังคับออกทันที
           await signOut(auth);
           setUser(null);
           alert("ขออภัย! อนุญาตเฉพาะบัญชี @fufonglabs.com เท่านั้น");
-          router.push("/login");
         }
-      } 
-      // 2. ถ้าไม่ได้ Login (หรือ Log out ไปแล้ว)
-      else {
+      } else {
         setUser(null);
-        // 🔒 ไฮไลท์สำคัญ: ถ้าไม่อยู่หน้า Login -> ดีดไปหน้า Login ทันที (กันคนแอบเข้า link ตรง)
-        if (pathname !== "/login") {
-          router.push("/login");
-        }
       }
-      setLoading(false);
+      setLoading(false); // โหลดเสร็จแล้ว (ไม่ว่าผลจะเป็นยังไง)
     });
 
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, []); // ✅ ว่างไว้แบบนี้ถูกแล้ว (ห้ามใส่ router/pathname)
 
-  // 3. ระหว่างรอตรวจสอบสิทธิ์ ให้หมุนติ้วๆ ไปก่อน (ห้ามเห็นเนื้อหา)
+  // 🔴 Effect 2: ยามเฝ้าประตู (ทำงานเมื่อ pathname เปลี่ยน หรือ user เปลี่ยน)
+  useEffect(() => {
+    if (loading) return; // ถ้ากำลังเช็คอยู่ อย่าเพิ่งทำอะไร
+
+    if (user) {
+      // กรณี: มีคน Login แล้ว
+      if (pathname === "/login") {
+        router.push("/"); // ถ้าอยู่หน้า Login ให้ไล่ไปหน้าแรก
+      }
+    } else {
+      // กรณี: ยังไม่ Login
+      if (pathname !== "/login") {
+        router.push("/login"); // ถ้าไม่ได้อยู่หน้า Login ให้ไล่ไป Login
+      }
+    }
+  }, [user, loading, pathname, router]);
+
+
+  // 3. หน้าโหลด (Loading Screen)
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#121212] gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F5F5F7] gap-4">
         <Loader2 className="animate-spin text-[#E60000]" size={48} />
         <p className="text-slate-400 text-sm font-light tracking-widest uppercase">Verifying Access...</p>
       </div>
     );
   }
 
-  // 4. ถ้าโหลดเสร็จแล้ว แต่ไม่มี User และไม่ได้อยู่หน้า Login (กันเหนียวอีกชั้นไม่ให้ render)
+  // 4. ถ้าโหลดเสร็จแล้ว แต่ไม่มีสิทธิ์ และยังไม่ได้ถูกดีดไปหน้า Login (กันเหนียว)
   if (!user && pathname !== "/login") {
     return null; 
   }
