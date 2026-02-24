@@ -4,15 +4,15 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'via.placeholder.com', // อนุญาตให้ใช้รูปจาก placeholder
+        hostname: 'via.placeholder.com',
       },
       {
         protocol: 'https',
-        hostname: 'blogger.googleusercontent.com', // อนุญาตให้ใช้รูปจาก Blogger (เผื่อใช้รูปเดิมจากโปรเจกต์คุณทวี)
+        hostname: 'blogger.googleusercontent.com',
       },
       {
         protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com', // อนุญาตให้ใช้รูปจาก Firebase Storage
+        hostname: 'firebasestorage.googleapis.com',
       },
     ],
   },
