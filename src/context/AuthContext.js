@@ -51,6 +51,16 @@ export const AuthProvider = ({ children }) => {
   }, [user, loading, pathname, router]);
 
   if (loading) {
+    // ถ้าเป็นหน้าแรก (/) ให้ข้ามหน้าจอกำลังโหลดไปเลย เพื่อให้ Landing Page โหลดทันที
+    if (pathname === "/") {
+      return (
+        <AuthContext.Provider value={{ user }}>
+          {children}
+        </AuthContext.Provider>
+      );
+    }
+
+    // สำหรับหน้าอื่นๆ ค่อยขึ้นหน้า Verifying Access...
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F5F5F7] gap-4">
         <Loader2 className="animate-spin text-[#E60000]" size={48} />
