@@ -11,15 +11,13 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // สถานะโหลดเริ่มต้นเป็น true เสมอ
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
-  // 🟢 Effect 1: ฟังสถานะ Login (รันครั้งเดียวตอนเข้าเว็บ)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        // เช็ค Email แบบตัวพิมพ์เล็ก/ใหญ่ เพื่อความชัวร์ (toLowerCase)
         if (currentUser.email.toLowerCase().endsWith("@fufonglabs.com")) {
           setUser(currentUser);
         } else {
@@ -30,31 +28,28 @@ export const AuthProvider = ({ children }) => {
       } else {
         setUser(null);
       }
-      setLoading(false); // โหลดเสร็จแล้ว (ไม่ว่าผลจะเป็นยังไง)
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []); // ✅ ว่างไว้แบบนี้ถูกแล้ว (ห้ามใส่ router/pathname)
+  }, []);
 
-  // 🔴 Effect 2: ยามเฝ้าประตู (ทำงานเมื่อ pathname เปลี่ยน หรือ user เปลี่ยน)
   useEffect(() => {
-    if (loading) return; // ถ้ากำลังเช็คอยู่ อย่าเพิ่งทำอะไร
+    if (loading) return;
 
     if (user) {
-      // กรณี: มีคน Login แล้ว
+      // ถ้า Login แล้วและเปิดหน้า login ให้เด้งไปหน้า admin
       if (pathname === "/login") {
-        router.push("/"); // ถ้าอยู่หน้า Login ให้ไล่ไปหน้าแรก
+        router.push("/admin"); 
       }
     } else {
-      // กรณี: ยังไม่ Login
-      if (pathname !== "/login") {
-        router.push("/login"); // ถ้าไม่ได้อยู่หน้า Login ให้ไล่ไป Login
+      // ถ้ายังไม่ Login อนุญาตให้เข้าได้แค่หน้า /login และหน้าแรก / เท่านั้น
+      if (pathname !== "/login" && pathname !== "/") {
+        router.push("/login");
       }
     }
   }, [user, loading, pathname, router]);
 
-
-  // 3. หน้าโหลด (Loading Screen)
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#F5F5F7] gap-4">
@@ -64,8 +59,8 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  // 4. ถ้าโหลดเสร็จแล้ว แต่ไม่มีสิทธิ์ และยังไม่ได้ถูกดีดไปหน้า Login (กันเหนียว)
-  if (!user && pathname !== "/login") {
+  // ป้องกันการกระพริบของหน้าเว็บที่โดนล็อค ยกเว้นหน้าแรก (/)
+  if (!user && pathname !== "/login" && pathname !== "/") {
     return null; 
   }
 

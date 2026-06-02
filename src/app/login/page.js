@@ -17,14 +17,14 @@ export default function LoginPage() {
     try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-        // เช็คอีเมลองค์กร (Logic เดียวกับต้นฉบับ)
         if (!user.email.endsWith("@fufonglabs.com")) {
             await signOut(auth);
             setError("อนุญาตเฉพาะบัญชี @fufonglabs.com เท่านั้น");
             setLoading(false);
             return;
         }
-        router.push("/");
+        // เปลี่ยนตรงนี้เป็น /admin
+        router.push("/admin");
     } catch (err) {
         if (err.code !== 'auth/popup-closed-by-user') {
             setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
