@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { Facebook, Instagram, ArrowRight } from "lucide-react";
+import { Facebook, Instagram, ArrowRight, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import { Kanit, Inter } from "next/font/google";
 
@@ -131,6 +131,27 @@ export default function LinktreePage() {
             colorClass="text-[#000000]"
             bgClass="bg-slate-200"
           />
+
+          {/* ปุ่ม Website (Coming Soon) แบบเทาๆ เส้นประ และกดไม่ได้ */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex items-center justify-between w-full p-5 mb-4 bg-white/40 backdrop-blur-xl border border-dashed border-slate-300 rounded-3xl shadow-sm cursor-not-allowed opacity-60"
+          >
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-slate-100/80 text-slate-400 rounded-2xl flex items-center justify-center shadow-sm border border-slate-200">
+                <Globe size={26} strokeWidth={2} />
+              </div>
+              <span className="font-bold text-slate-400 text-xl tracking-tight">Official Website</span>
+            </div>
+            
+            {/* ป้ายกำกับคำว่า Soon คู่กับลูกศรสีเทาแบบนิ่งๆ */}
+            <div className="flex items-center gap-2 bg-slate-200/60 px-3 py-1.5 rounded-full border border-slate-300/40บ">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Soon</span>
+              <ArrowRight className="text-slate-400" size={14} strokeWidth={2.5} />
+            </div>
+          </motion.div>
         </div>
 
         {/* Footer */}
