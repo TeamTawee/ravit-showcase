@@ -10,8 +10,8 @@ const kanit = Kanit({
 });
 
 export const metadata = {
-  title: "Ravit Sodsong - New Gen Voice", // เปลี่ยนชื่อหัวเว็บเป็น Ravit
-  description: "Official Blog & Activities",
+  title: "Ravit (WIN) Sodsong - รวิศ สอดส่อง", // เปลี่ยนชื่อหัวเว็บเป็น Ravit
+  description: "Official Digital Presence",
   robots: { index: false, follow: false }, // ป้องกัน Google bot สำหรับระบบภายใน
 };
 
