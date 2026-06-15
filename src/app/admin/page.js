@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db, auth } from "../../lib/firebase"; 
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs, orderBy, query, writeBatch } from "firebase/firestore"; 
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -13,6 +13,11 @@ import {
   Underline, AlignCenter, List 
 } from "lucide-react";
 
+// 🟢 1. นำเข้าและตั้งค่า Font ให้เหมือน Frontend
+import { Kanit, Inter } from "next/font/google";
+const inter = Inter({ subsets: ["latin"], display: "swap" });
+const kanit = Kanit({ subsets: ["thai", "latin"], weight: ["300", "400", "500", "600", "700"], display: "swap" });
+
 // --- Custom Layout Icons ---
 const IconPicLeft = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="stroke-current"><rect x="3" y="4" width="8" height="16" rx="2" fill="currentColor" fillOpacity="0.3" strokeWidth="1.5" /><path d="M14 6H21 M14 10H21 M14 14H19" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -24,6 +29,95 @@ const IconPicRight = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="stroke-current"><rect x="13" y="4" width="8" height="16" rx="2" fill="currentColor" fillOpacity="0.3" strokeWidth="1.5" /><path d="M3 6H10 M3 10H10 M3 14H8" strokeWidth="1.5" strokeLinecap="round"/></svg>
 );
 
+// 🟢 RichTextEditor: เครื่องมือแก้ไขข้อความแบบเห็นภาพจริง (WYSIWYG)
+const RichTextEditor = ({ value, onChange, placeholder, isQuote }) => {
+  const editorRef = useRef(null);
+  const [active, setActive] = useState({ bold: false, italic: false, underline: false, justifyCenter: false, insertUnorderedList: false });
+
+  useEffect(() => {
+    if (editorRef.current && document.activeElement !== editorRef.current) {
+      editorRef.current.innerHTML = value || "";
+    }
+  }, [value]);
+
+  const checkActive = () => {
+    setActive({
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      underline: document.queryCommandState('underline'),
+      justifyCenter: document.queryCommandState('justifyCenter'),
+      insertUnorderedList: document.queryCommandState('insertUnorderedList'),
+    });
+  };
+
+  const handleInput = () => {
+    if (editorRef.current) onChange(editorRef.current.innerHTML);
+  };
+
+  const exec = (command, val = null) => {
+    document.execCommand(command, false, val);
+    if (editorRef.current) editorRef.current.focus();
+    handleInput();
+    checkActive();
+  };
+
+  const handleLink = () => {
+    const url = prompt("ใส่ URL (เช่น https://www...):", "https://");
+    if (url) {
+      exec('createLink', url);
+      if (editorRef.current) {
+         const links = editorRef.current.querySelectorAll('a');
+         links.forEach(link => {
+            if(!link.getAttribute('target')) {
+                link.setAttribute('target', '_blank');
+                link.classList.add('text-[#E60000]', 'underline', 'font-bold');
+            }
+         });
+         handleInput();
+      }
+    }
+  };
+
+  const handlePaste = (e) => {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+      selection.deleteFromDocument();
+      const textNode = document.createTextNode(text);
+      const range = selection.getRangeAt(0);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      handleInput();
+  };
+
+  return (
+    <div className={`relative group flex-1 flex flex-col shadow-sm overflow-hidden border border-slate-200 focus-within:border-slate-400 transition-all ${isQuote ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
+      <div className="flex bg-slate-100 border-b border-slate-200 overflow-x-auto no-scrollbar">
+          <button type="button" onClick={() => exec('bold')} className={`p-2 border-r border-slate-200 transition-colors ${active.bold ? 'bg-[#121212] text-white' : 'hover:bg-slate-200 text-slate-700'}`} title="ตัวหนา"><Bold size={14}/></button>
+          <button type="button" onClick={() => exec('italic')} className={`p-2 border-r border-slate-200 transition-colors ${active.italic ? 'bg-[#121212] text-white' : 'hover:bg-slate-200 text-slate-700'}`} title="ตัวเอียง"><Italic size={14}/></button>
+          <button type="button" onClick={() => exec('underline')} className={`p-2 border-r border-slate-200 transition-colors ${active.underline ? 'bg-[#121212] text-white' : 'hover:bg-slate-200 text-slate-700'}`} title="ขีดเส้นใต้"><Underline size={14}/></button>
+          <button type="button" onClick={() => exec('justifyCenter')} className={`p-2 border-r border-slate-200 transition-colors ${active.justifyCenter ? 'bg-[#121212] text-white' : 'hover:bg-slate-200 text-slate-700'}`} title="จัดกึ่งกลาง"><AlignCenter size={14}/></button>
+          <button type="button" onClick={() => exec('insertUnorderedList')} className={`p-2 border-r border-slate-200 transition-colors ${active.insertUnorderedList ? 'bg-[#121212] text-white' : 'hover:bg-slate-200 text-slate-700'}`} title="รายการจุด"><List size={14}/></button>
+          <button type="button" onClick={handleLink} className="p-2 hover:bg-slate-200 text-slate-700 transition-colors" title="แทรกลิงก์"><LinkIcon size={14}/></button>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        onInput={handleInput}
+        onKeyUp={checkActive}
+        onMouseUp={checkActive}
+        onPaste={handlePaste}
+        className={`flex-1 w-full p-4 min-h-[150px] outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-slate-300 [&_ul]:list-disc [&_ul]:list-inside [&_ol]:list-decimal [&_ol]:list-inside [&_b]:font-bold [&_i]:italic [&_u]:underline [&_p]:mb-4 [&>div]:mb-4 whitespace-pre-wrap ${isQuote ? 'text-center italic font-medium text-amber-900 bg-amber-50/50' : 'text-slate-600 bg-slate-50 focus:bg-white'}`}
+        data-placeholder={placeholder}
+      />
+    </div>
+  );
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -32,6 +126,8 @@ export default function AdminPage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [category, setCategory] = useState("");
+  const [customDate, setCustomDate] = useState(""); 
+  const [storyDate, setStoryDate] = useState(""); // 🟢 เพิ่ม State สำหรับเก็บวันที่
   const [shortDesc, setShortDesc] = useState("");
   const [coverImage, setCoverImage] = useState("");
   const [order, setOrder] = useState(0); 
@@ -56,7 +152,8 @@ export default function AdminPage() {
 
   const fetchProjects = async () => {
     try {
-        const q = query(collection(db, "projects"), orderBy("order", "asc"));
+        // 🟢 เปลี่ยนมาเรียงตาม storyDate แบบ desc (ใหม่ไปเก่า)
+        const q = query(collection(db, "projects"), orderBy("storyDate", "desc"));
         const querySnapshot = await getDocs(q);
         const items = [];
         const foundCategories = new Set(categories); 
@@ -149,7 +246,8 @@ export default function AdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setLoading(true);
-    const rawPayload = { title, slug: slug || "", category, shortDesc, image: coverImage, order: Number(order) || 0, published: isPublished, contentBlocks: blocks, updatedAt: new Date() };
+    // 🟢 เพิ่ม storyDate เข้าไปใน rawPayload เพื่อเซฟลง Database
+    const rawPayload = { title, slug: slug || "", category, storyDate, shortDesc, image: coverImage, order: Number(order) || 0, published: isPublished, contentBlocks: blocks, updatedAt: new Date() };
     try {
       if (editId) { await updateDoc(doc(db, "projects", editId), rawPayload); alert("บันทึกแล้ว!"); } 
       else { await addDoc(collection(db, "projects"), { ...rawPayload, createdAt: new Date() }); alert("สร้างใหม่แล้ว!"); }
@@ -159,18 +257,23 @@ export default function AdminPage() {
 
   const handleEditClick = (item) => {
       setEditId(item.id); setTitle(item.title); setSlug(item.slug || ""); 
-      setCategory(item.category); setShortDesc(item.shortDesc); setCoverImage(item.image);
+      setCategory(item.category); setStoryDate(item.storyDate || ""); setShortDesc(item.shortDesc); setCoverImage(item.image); // 🟢 ดึง storyDate มาโชว์
       setOrder(item.order || 0); setIsPublished(item.published !== false);
       setBlocks((item.contentBlocks || []).map(normalizeBlock));
       window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const resetForm = () => { setEditId(null); setTitle(""); setSlug(""); setCategory(""); setShortDesc(""); setCoverImage(""); setOrder(projectsList.length > 0 ? Math.max(...projectsList.map(i => i.order || 0)) + 1 : 1); setBlocks([]); setIsPublished(true); }
+  // 🟢 เพิ่ม setStoryDate("") เพื่อล้างค่าช่องวันที่
+  const resetForm = () => { setEditId(null); setTitle(""); setSlug(""); setCategory(""); setStoryDate(""); setShortDesc(""); setCoverImage(""); setOrder(projectsList.length > 0 ? Math.max(...projectsList.map(i => i.order || 0)) + 1 : 1); setBlocks([]); setIsPublished(true); }
 
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans">
+    // 🟢 2. เรียกใช้ Font ที่ตั้งค่าไว้ครอบทั้งหน้าแอดมิน
+    <div 
+        className="min-h-screen bg-slate-100 flex flex-col md:flex-row"
+        style={{ fontFamily: `${inter.style.fontFamily}, ${kanit.style.fontFamily}, sans-serif` }}
+    >
       {/* SIDEBAR: ปรับปรุงการแสดงผล Card Activity */}
       <div className="w-full md:w-80 bg-[#121212] text-white border-r border-slate-800 h-auto md:h-screen sticky top-0 overflow-y-auto flex flex-col z-20 shadow-xl">
         <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-[#E60000]">
@@ -204,11 +307,7 @@ export default function AdminPage() {
                         
                         {/* Action Buttons */}
                         <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                            <div className="flex gap-1">
-                                <button onClick={e => handleReorderProject(idx, 'up', e)} disabled={idx===0} className="hover:text-[#E60000] disabled:opacity-20"><ChevronUp size={12}/></button>
-                                <button onClick={e => handleReorderProject(idx, 'down', e)} disabled={idx===projectsList.length-1} className="hover:text-[#E60000] disabled:opacity-20"><ChevronDown size={12}/></button>
-                            </div>
-                            <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(item.id); }} className="text-slate-500 hover:text-red-500 self-end"><Trash2 size={12}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(item.id); }} className="p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-lg self-end transition-all"><Trash2 size={16}/></button>
                         </div>
                     </div>
                 ))}
@@ -241,7 +340,10 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 mb-6">
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full text-2xl font-bold border-b-2 border-slate-100 focus:border-[#E60000] outline-none py-2 transition-colors" placeholder="Story Title..."/>
+                <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">ชื่อรายการ (สำหรับอ้างอิงในระบบ / ไม่แสดงหน้าเว็บ)</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full text-2xl font-bold border-b-2 border-slate-100 focus:border-[#E60000] outline-none py-2 transition-colors" placeholder="ระบุชื่อเพื่อให้หาง่ายในระบบหลังบ้าน..."/>
+                </div>
                 
                 <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
                     <LinkIcon size={14} className="text-slate-400"/>
@@ -258,9 +360,20 @@ export default function AdminPage() {
                         {coverImage && <img src={coverImage} alt="Cover" className="w-full h-32 object-cover rounded-xl border border-slate-200" />}
                     </div>
                     <div className="space-y-4">
-                        <input type="text" list="categories" value={category} onChange={e => setCategory(e.target.value)} className="w-full p-3 text-sm border-none bg-slate-50 rounded-2xl outline-none" placeholder="Category (Type or Select)"/>
-                        <datalist id="categories">{categories.map(c => <option key={c} value={c}/>)}</datalist>
-                        <textarea value={shortDesc} onChange={e => setShortDesc(e.target.value)} className="w-full p-3 text-sm border-none bg-slate-50 rounded-2xl outline-none h-24 resize-none" placeholder="Short description..."/>
+                        {/* 🟢 แก้ไขช่องป้ายแดง (แทนที่ Category เดิม) */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">ข้อความป้ายแดง (หมวดหมู่)</label>
+                            <input type="text" value={category} onChange={e => setCategory(e.target.value)} className="w-full p-3 text-sm border-none bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-slate-200 transition-all" placeholder="เช่น แถลงข่าว, ลงพื้นที่, สัมมนา..."/>
+                            <span className="text-[10px] text-[#E60000] ml-1">* ข้อความสั้นๆ ที่จะไปแสดงบนป้ายสีแดงในหน้า Story</span>
+                        </div>
+                        
+                        {/* 🟢 เพิ่มช่อง Input ปฏิทินตรงนี้ */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">วันที่ (สำหรับแสดงผล)</label>
+                            <input type="date" value={storyDate} onChange={e => setStoryDate(e.target.value)} className="w-full p-3 text-sm border-none bg-slate-50 rounded-2xl outline-none text-slate-600 cursor-pointer focus:ring-2 focus:ring-slate-200 transition-all" title="เลือกวันที่แสดงผล" />
+                        </div>
+                        
+                        <textarea value={shortDesc} onChange={e => setShortDesc(e.target.value)} className="w-full p-3 text-sm border-none bg-slate-50 rounded-2xl outline-none h-24 resize-none focus:ring-2 focus:ring-slate-200 transition-all mt-2" placeholder="คำอธิบายสั้นๆ (Short description)..."/>
                     </div>
                 </div>
             </div>
@@ -324,16 +437,13 @@ export default function AdminPage() {
                                         <Quote size={10}/> {block.textStyle === 'quote' ? 'Quote Mode' : 'Normal Text'}
                                     </button>
                                 </div>
-                                <div className="relative group flex-1">
-                                    <div className="absolute top-0 right-0 flex bg-white border shadow-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 overflow-hidden scale-90 origin-top-right">
-                                        <button onClick={() => insertHtmlTag(index, 'bold')} className="p-1.5 hover:bg-slate-100 text-slate-600" title="Bold"><Bold size={14}/></button>
-                                        <button onClick={() => insertHtmlTag(index, 'italic')} className="p-1.5 hover:bg-slate-100 text-slate-600" title="Italic"><Italic size={14}/></button>
-                                        <button onClick={() => insertHtmlTag(index, 'underline')} className="p-1.5 hover:bg-slate-100 text-slate-600" title="Underline"><Underline size={14}/></button>
-                                        <button onClick={() => insertHtmlTag(index, 'center')} className="p-1.5 hover:bg-slate-100 text-slate-600" title="Center"><AlignCenter size={14}/></button>
-                                        <button onClick={() => insertHtmlTag(index, 'list')} className="p-1.5 hover:bg-slate-100 text-slate-600" title="List"><List size={14}/></button>
-                                        <button onClick={() => insertHtmlTag(index, 'link')} className="p-1.5 hover:bg-slate-100 text-slate-600" title="Link"><LinkIcon size={14}/></button>
-                                    </div>
-                                    <textarea id={`editor-${index}`} value={block.content || ""} onChange={e => updateBlock(index, 'content', e.target.value)} rows={5} className={`w-full p-4 text-sm border-none bg-slate-50 rounded-2xl resize-none outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all ${block.textStyle === 'quote' ? 'text-center italic font-medium text-amber-900 bg-amber-50/50' : 'text-slate-600'}`} placeholder={block.textStyle === 'quote' ? '"Write your quote here..."' : "Paragraph Content..."} />
+                                <div className="relative flex-1 flex flex-col">
+                                    <RichTextEditor 
+                                        value={block.content || ""}
+                                        onChange={(newContent) => updateBlock(index, 'content', newContent)}
+                                        placeholder={block.textStyle === 'quote' ? '"พิมพ์คำคมที่นี่..."' : "พิมพ์เนื้อหาบทความ (กด Enter ขึ้นบรรทัดใหม่ได้เลย)..."}
+                                        isQuote={block.textStyle === 'quote'}
+                                    />
                                 </div>
                             </div>
                         </div>

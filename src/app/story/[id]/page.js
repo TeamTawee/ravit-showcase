@@ -16,9 +16,11 @@ const kanit = Kanit({ subsets: ["thai", "latin"], weight: ["300", "400", "500", 
 // --- Content Block Renderer ---
 const ContentBlock = ({ block }) => {
     const isQuote = block.textStyle === 'quote';
+    const hasMedia = block.mediaType !== 'none' && !!block.mediaSrc;
     
+    // ส่วนแสดงผลรูปภาพหรือวิดีโอ
     const MediaSection = () => {
-        if (block.mediaType === 'none' || !block.mediaSrc) return null;
+        if (!hasMedia) return null;
         const isVideo = block.mediaType === 'video';
         return (
             <div className="w-full relative rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 mb-8 shadow-sm">
@@ -40,6 +42,23 @@ const ContentBlock = ({ block }) => {
         );
     };
 
+    // ส่วนคลาสของข้อความปกติ (จัดหนักให้เป๊ะตามแอดมิน)
+    const richTextClasses = "prose prose-lg max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed [&_ul]:list-disc [&_ul]:list-inside [&_ol]:list-decimal [&_ol]:list-inside [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_p]:mb-4 [&>div]:mb-4";
+
+    // 🟢 สร้างฟังก์ชันย่อยสำหรับวาดข้อความ เพื่อไม่ให้ Quote หลุดหายไปอีก
+    const TextSection = () => {
+        if (isQuote) {
+            return (
+                <div className="py-16 px-10 md:px-20 bg-slate-50 rounded-3xl text-center relative border border-slate-200 shadow-inner w-full">
+                    <Quote className="absolute top-6 left-6 text-slate-200 transform scale-x-[-1]" size={48}/>
+                    <div className="text-xl md:text-3xl italic text-slate-800 leading-relaxed relative z-10 whitespace-pre-wrap [&_b]:font-bold [&_strong]:font-bold" dangerouslySetInnerHTML={{ __html: block.content }} />
+                    <Quote className="absolute bottom-6 right-6 text-slate-200" size={48}/>
+                </div>
+            );
+        }
+        return <div className={richTextClasses} dangerouslySetInnerHTML={{ __html: block.content }} />;
+    };
+
     return (
         <div className="mb-12">
             {block.heading && (
@@ -48,28 +67,26 @@ const ContentBlock = ({ block }) => {
                 </h3>
             )}
             
+            {/* แยกการแสดงผลให้ครอบคลุมทั้ง Quote และข้อความปกติ ในทุกๆ เลย์เอาต์ */}
             {block.layout === 'top' ? (
                 <div className="flex flex-col gap-6">
                     <MediaSection />
-                    <div className="prose prose-lg max-w-none text-slate-600 font-light leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content }} />
+                    <TextSection />
+                    {block.actionUrl && (
+                        <a href={block.actionUrl} target="_blank" className="inline-flex items-center gap-2 mt-4 px-6 py-3 bg-[#121212] text-white rounded-full text-sm font-bold hover:bg-[#E60000] transition-all shadow-lg w-max hover:shadow-xl hover:-translate-y-1">
+                            ไปที่ลิงก์ <LinkIcon size={16}/>
+                        </a>
+                    )}
                 </div>
             ) : (
                 <div className={`flex flex-col md:flex-row gap-8 items-start ${block.layout === 'right' ? 'md:flex-row-reverse' : ''}`}>
-                    {block.mediaSrc && (
+                    {hasMedia && (
                         <div className="w-full md:w-1/2">
                             <MediaSection />
                         </div>
                     )}
-                    <div className={`w-full ${block.mediaSrc ? 'md:w-1/2' : ''}`}>
-                        {isQuote ? (
-                            <div className="py-12 px-8 bg-slate-50 rounded-3xl text-center relative border border-slate-200 shadow-inner">
-                                <Quote className="absolute top-6 left-6 text-slate-300 transform scale-x-[-1]" size={48}/>
-                                <div className="text-xl md:text-3xl font-serif italic text-slate-800 leading-relaxed relative z-10" dangerouslySetInnerHTML={{ __html: block.content }} />
-                                <Quote className="absolute bottom-6 right-6 text-slate-300" size={48}/>
-                            </div>
-                        ) : (
-                            <div className="prose prose-lg max-w-none text-slate-600 font-light leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content }} />
-                        )}
+                    <div className={`w-full ${hasMedia ? 'md:w-1/2' : ''}`}>
+                        <TextSection />
                         {block.actionUrl && (
                             <a href={block.actionUrl} target="_blank" className="inline-flex items-center gap-2 mt-8 px-6 py-3 bg-[#121212] text-white rounded-full text-sm font-bold hover:bg-[#E60000] transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">
                                 ไปที่ลิงก์ <LinkIcon size={16}/>
@@ -125,7 +142,7 @@ export default function StoryDetail({ params }) {
     >
       
       <nav className="fixed top-0 left-0 right-0 z-50 p-6 flex justify-between items-center pointer-events-none">
-        <Link href="/" className="pointer-events-auto flex items-center gap-2 bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-full hover:bg-white transition-all font-bold uppercase tracking-wider text-xs border border-slate-200 shadow-sm hover:shadow-md">
+        <Link href="/showcase" className="pointer-events-auto flex items-center gap-2 bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-full hover:bg-white transition-all font-bold uppercase tracking-wider text-xs border border-slate-200 shadow-sm hover:shadow-md">
             <ArrowLeft size={16}/> Back
         </Link>
         <div className="pointer-events-auto font-black text-xl tracking-tighter bg-white/60 backdrop-blur-md px-4 py-1 rounded-full border border-slate-200/50">
@@ -173,13 +190,15 @@ export default function StoryDetail({ params }) {
                           {story.category}
                       </span>
                       <span className="text-slate-500 text-xs font-medium flex items-center gap-1.5">
-                          <Calendar size={12}/> {story.createdAt?.toDate ? new Date(story.createdAt.toDate()).toLocaleDateString('th-TH') : 'Today'}
+                          <Calendar size={12}/> 
+                          {story.storyDate 
+                              ? new Date(story.storyDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) 
+                              : (story.createdAt?.toDate ? new Date(story.createdAt.toDate()).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Today')
+                          }
                       </span>
                   </div>
                   
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-[1.1] text-slate-900 tracking-tight drop-shadow-sm">
-                      {story.title}
-                  </h1>
+                  {/* เอาการแสดงผลชื่อหัวข้อ (Title) ออกจากหน้าเนื้อหา */}
                   
                   {/* ปรับ font-medium ตามที่ขอให้หนาขึ้น */}
                   <p className="text-lg md:text-xl text-slate-600 font-medium leading-relaxed max-w-2xl mx-auto">
@@ -221,7 +240,7 @@ export default function StoryDetail({ params }) {
 
       <footer className="bg-[#121212] text-white py-16 text-center mt-20">
          <div className="font-black text-2xl tracking-tighter mb-4">RAVIT<span className="text-[#E60000]">.</span></div>
-         <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em]">Designed for New Generation.</p>
+         <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em]">© 2026 Ravit Sodsong. All Rights Reserved.</p>
       </footer>
 
       <style jsx global>{`
