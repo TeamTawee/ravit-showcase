@@ -470,31 +470,10 @@ export default function HomePage() {
                 </p>
             </div>
 
-            {/* Column 2: Contact Info */}
-            <div className="md:col-span-4 text-left">
-                <h4 className="text-lg font-bold mb-6 flex items-center justify-start gap-2">
-                    <MapPin className="text-[#E60000]" size={20} /> ช่องทางการติดต่อ
-                </h4>
-                <div className="space-y-4 text-sm text-slate-300 font-light">
-                    <p className="flex items-center justify-start gap-3">
-                        <Phone size={16} className="text-[#E60000]" /> 098-249-9999
-                    </p>
-                    <p className="flex items-center justify-start gap-3">
-                        <Mail size={16} className="text-[#E60000]" /> ravit@sodsong.com
-                    </p>
-                    <p className="flex items-center justify-start gap-3">
-                        <MessageCircle size={16} className="text-[#E60000]" /> Line ID: wiinns
-                    </p>
-                    <p className="flex items-start justify-start gap-3 mt-2">
-                        <MapPin size={16} className="text-[#E60000] shrink-0 mt-1" /> 
-                        <span className="leading-relaxed text-left">9 ถ.เฉลิมพระเกียรติ ร.9 ซ.48 แยก 15<br/>แขวงดอกไม้ เขตประเวศ กรุงเทพมหานคร 10250</span>
-                    </p>
-                </div>
-            </div>
 
-            {/* Column 3: Social Media (ยกเว้น ยังคงจัดกลางบนมือถือ) */}
-            <div className="md:col-span-3 flex flex-col items-center md:items-start lg:items-end">
-                <h4 className="text-lg font-bold mb-6 text-center md:text-left lg:text-right w-full">ติดตามความเคลื่อนไหว</h4>
+            {/* Column 2: Social Media (จัดกลางบนมือถือ, ชิดขวาบนหน้าจอคอม) */}
+            <div className="md:col-span-7 flex flex-col items-center md:items-end">
+                <h4 className="text-lg font-bold mb-6 text-center md:text-right w-full">ติดตามความเคลื่อนไหว</h4>
                 <div className="flex gap-4">
                     <a href="https://www.facebook.com/profile.php?id=61554124575777" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#E60000] hover:border-[#E60000] transition-all"><Facebook size={20}/></a>
                     <a href="https://www.instagram.com/ravit.ss" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#E60000] hover:border-[#E60000] transition-all"><Instagram size={20}/></a>
